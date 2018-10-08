@@ -1,0 +1,17 @@
+{
+    "name": "chat",
+    "version": "1.0.0",
+    "description": "Simple js chat with Socket.io",
+    "main": "index.js",
+    "scripts": {
+        "test": "node server.js"
+    },
+    "author": "Daniel",
+    "license": "MIT",
+    "dependencies": {
+        "express": "*",
+        "nodeman": "^1.1.2",
+        "socket.io": "*",
+        "mongoose": "*"
+    }
+}

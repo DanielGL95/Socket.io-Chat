@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <title>Chatter</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://code.jquery.com/jquery-2.2.4.js" integrity="sha256-iT6Q9iMJYuQiMWNd9lDyBUStIq/8PuOW33aOqmvFpqI="
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.dev.js"></script>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+    <style>
+        body {
+            margin-top: 20px;
+            background-color: rgb(209, 226, 240);
+        }
+        .con{
+            border-bottom: 1px solid #2196F3;
+            border-radius:25px;
+
+        }
+
+        .w3-myfont {
+            font-family: "Comic Sans MS", "cursive", "sans-serif";
+        }
+
+        #del {
+            font-size: 13px;
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif, Helvetica, sans-serif;
+            height: 70px;
+        }
+      
+        .title{
+            margin: auto;
+            width: 40%;
+        }
+
+        #chat {
+            height: 200px;
+            width: 500px;
+            border: 1px solid #ccc;
+            font: 16px/26px Georgia, Garamond, Serif;
+            overflow: auto;
+        }
+    
+        
+        #messages {
+            height: 200px;
+        }
+        
+        #username {
+            margin-right: 150px;
+            width: 260px
+        }
+        
+      
+        .card-header {
+            height:100%;
+            width: 110%;
+            border: 1px solid #ccc;
+            background-color: white;
+            font: 16px/26px Georgia, Garamond, Serif;
+            overflow: auto;
+        }
+        
+        .submitBtn{
+            width: 15%;
+        }
+
+
+
+    </style>
+
+    
+</head>
+
+
+<body class="w3-myfont ">
+
+
+    <div class="con container">
+        <div class="nav w3-bar w3-blue w3-round-xlarge">
+                <h3 class=" w3-padding w3-center title">Chatter</h3>
+        </div>
+
+        <p id="demo"></p>
+
+        <div id="userArea" class="w3-margin-top ">
+
+            <form id="userForm" class=" w3-center container ">
+                <input class="w3-input w3-center w3-margin w3-animate-input" type="text" style="width:100%" id="username"
+                    placeholder="Enter username">
+                <input type="submit" class="w3-btn w3-white w3-border w3-border-blue w3-round-large submitBtn"
+                    placeholder="Enter username">
+            </form>
+            <br />
+        </div>
+
+        <!-- col-md-4 -->
+        <div id="chatArea" class="container">
+            <div class="row w3-margin ">
+
+                <div class="w3-container w3-margin" id="usersArea">
+                    <div class="card-header">
+                        <h5 class="w3-myfont w3-margin">Online Users:</h5>
+                        <ul class="w3-ul" id="users">
+                            <li class="w3-myfont">No connected users</li>
+                        </ul>
+
+                    </div>
+                </div>
+
+                <div class="w3-container w3-margin">
+                    <div class="card" id="chat">
+                        <div class="card-block" id="messages">
+
+                            <div id="notification">
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <label class="w3-margin" for="">Enter Message</label>
+                    <input class="w3-input" id="textarea" />
+                    <button style="margin: 10px; width:160px " class=" w3-btn w3-white w3-border w3-border-blue w3-round-large "
+                        id="btnSend">Send</button>
+                    <button style="margin: 10px; width:80px " class=" w3-btn w3-white w3-border w3-border-red w3-round-large "
+                        id="btnClose">Close</button>
+                </div>
+            </div>
+        </div>
+   
+    </div>
+
+
+
+    <script>
+        $(function () {
+            let socket = io.connect();
+            let messageForm = $('#messages');
+            let textarea = $('#textarea');
+            let username = $('#username')
+            let chatArea = $('#chatArea')
+            let userArea = $('#userArea')
+            let userList = $('#users')
+
+            $('#textarea').keydown(function () {
+                socket.emit('typing', socket.username);
+
+            })
+
+
+            $("#btnSend").on('click', sendMessage);
+
+            $("#btnClose").on('click', () => {
+                socket.username = undefined
+
+                socket.emit('close chat', socket.username);
+                $('#del').detach()
+            })
+
+            $('#userForm').submit((data) => {
+                data.preventDefault()
+
+                if (username.val() !== "")
+                    socket.emit('send username', username.val())
+                socket.username = username.val()
+                username.val('');
+
+            })
+
+            function sendMessage() {
+
+                $('#notification').html(`<p></p>`)
+                if (textarea.val() !== "") {
+                    socket.emit('send message', textarea.val());
+                    textarea.val(" ");
+
+                }
+            }
+
+            socket.on('new message', function (obj) {
+                let messageDiv = $(
+                    `<div class= "w3-margin-left" id='del' ;> <strong>${obj.username}:</strong> ${obj.msg}</div> `
+                )
+                socket.emit('notTyping', socket.username);
+                $('#chat').append(messageDiv);
+            })
+
+          
+
+            socket.on('get user', function (obj) {
+
+                $('#users').empty();
+                for (let x = 0; x <= obj.length; x++) {
+                    if (obj[x] !== undefined) {
+                        userList.append(`<li>${obj[x]}</li>`)
+                    }
+                }
+            })
+
+            socket.on('typing', (data) => {
+                $('#notification').html(`<p><em>${data} is typing</em></p>`)
+            })
+
+            socket.on('notTyping', (data) => {
+                $('#notification').html(`<p><em></em></p>`)
+            })
+        })
+    </script>
+</body>
+
+</html>
